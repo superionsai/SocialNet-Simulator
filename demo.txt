@@ -1,0 +1,12 @@
+ADD USER Alice
+ADD USER Bob
+ADD USER Carol
+ADD FRIEND Alice Bob
+ADD FRIEND Bob Carol
+LIST FRIENDS Bob
+SUGGEST FRIENDS Alice 5
+ADD POST Alice "Hello world"
+ADD POST Alice "Second post"
+OUTPUT POSTS Alice -1
+DEGREES OF SEPARATION Alice Carol
+EXIT
