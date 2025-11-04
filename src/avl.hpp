@@ -16,10 +16,10 @@ struct AVLNode {
     AVLNode(const Post &p): post(p), left(nullptr), right(nullptr), height(1) {}
 };
 
-int avl_height(AVLNode* n);
-void avl_update(AVLNode* n);
-AVLNode* avl_rotate_right(AVLNode* y);
-AVLNode* avl_rotate_left(AVLNode* x);
-AVLNode* avl_insert(AVLNode* node, const Post &p);
-void avl_collect_recent(AVLNode* node, std::vector<Post> &out, int N);
-void avl_free(AVLNode* node);
+int height(AVLNode* n);
+void update(AVLNode* n);
+AVLNode* rotate_right(AVLNode* y);
+AVLNode* rotate_left(AVLNode* x);
+AVLNode* insert(AVLNode* node, const Post &p);
+void collect_recent(AVLNode* node, std::vector<Post> &out, int N);
+void free(AVLNode* node);

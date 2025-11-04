@@ -2,31 +2,11 @@
 #include "socialnet.hpp"
 using namespace std;
 
-bool DEBUG_MODE = false;
-void debug(const string &msg) {
-    if (DEBUG_MODE) cout << "[DEBUG] " << msg << "\n";
-}
-
-vector<string> split_keep_quotes(const string &line) {
-    vector<string> out;
-    string cur;
-    bool inq = false;
-    for (char c : line) {
-        if (c == '"') {
-            inq = !inq;
-            cur.push_back(c);
-        } else if (isspace((unsigned char)c) && !inq) {
-            if (!cur.empty()) { out.push_back(cur); cur.clear(); }
-        } else cur.push_back(c);
-    }
-    if (!cur.empty()) out.push_back(cur);
-    return out;
-}
-
-string strip_quotes(const string &s) {
-    if (s.size() >= 2 && s.front() == '"' && s.back() == '"')
-        return s.substr(1, s.size() - 2);
-    return s;
+string to_uppercase(string s) {
+    string res;
+    for (char &c : s)
+        res += toupper(static_cast<unsigned char>(c));
+    return res;
 }
 
 int main() {
@@ -34,108 +14,121 @@ int main() {
     cin.tie(nullptr);
 
     SocialNet sn;
-    cout << "Welcome to SocialNet!\n";
-    cout << "Type commands below. Type EXIT to quit.\n\n";
+    cout << "Welcome to SocialNet. Type commands below (EXIT to quit):" << endl;
 
     string line;
     while (true) {
-        cout << "> ";
+        cout << "> " << flush;
         if (!getline(cin, line)) break;
         if (line.empty()) continue;
 
-        if (line == "EXIT" || line == "exit") {
-            cout << "Goodbye.\n";
-            break;
-        }
+        stringstream ss(line);
+        string cmd;
+        ss >> cmd;
+        cmd = to_uppercase(cmd);
 
-        auto toks = split_keep_quotes(line);
-        if (toks.empty()) continue;
+        if (cmd == "EXIT") break;
 
-        if (toks[0] == "DEBUG" && toks.size() >= 2) {
-            string mode = toks[1];
-            if (mode == "ON" || mode == "on") {
-                DEBUG_MODE = true;
-                cout << "Debug mode enabled.\n";
-            } else if (mode == "OFF" || mode == "off") {
-                DEBUG_MODE = false;
-                cout << "Debug mode disabled.\n";
-            } else {
-                cout << "Usage: DEBUG ON / DEBUG OFF\n";
+        if (cmd == "ADD") {
+            string type;
+            ss >> type;
+            type = to_uppercase(type);
+
+            if (type == "USER") {
+                string user;
+                ss >> user;
+                user = to_uppercase(user);
+                if (sn.add_user(user))
+                    cout << "User '" << user << "' added." << endl;
+                else
+                    cout << "Failed to add user." << endl;
+            } 
+            else if (type == "FRIEND") {
+                string u1, u2;
+                ss >> u1 >> u2;
+                u1 = to_uppercase(u1);
+                u2 = to_uppercase(u2);
+                if (sn.add_friend(u1, u2))
+                    cout << "Friendship created between '" << u1 << "' and '" << u2 << "'." << endl;
+                else
+                    cout << "Failed to add friendship." << endl;
+            } 
+            else if (type == "POST") {
+                string user;
+                ss >> user;
+                user = to_uppercase(user);
+                string rest;
+                getline(ss, rest);
+                size_t start = rest.find('"'), end = rest.rfind('"');
+                string content = (start != string::npos && end != string::npos && end > start)
+                                 ? rest.substr(start + 1, end - start - 1)
+                                 : rest;
+                if (sn.add_post(user, content))
+                    cout << "Post added for '" << user << "'." << endl;
+                else
+                    cout << "Failed to add post." << endl;
             }
-            continue;
-        }
-
-        if (toks.size() >= 3 && toks[0] == "ADD" && toks[1] == "USER") {
-            bool ok = sn.add_user(toks[2]);
-            if (ok) cout << "User '" << toks[2] << "' added.\n";
-            else cout << "Failed to add user.\n";
-        }
-
-        else if (toks.size() >= 4 && toks[0] == "ADD" && toks[1] == "FRIEND") {
-            bool ok = sn.add_friend(toks[2], toks[3]);
-            if (ok) cout << "Friendship created between '" << toks[2] << "' and '" << toks[3] << "'.\n";
-            else cout << "Failed to add friend.\n";
-        }
-
-        else if (toks.size() >= 3 && toks[0] == "LIST" && toks[1] == "FRIENDS") {
-            auto L = sn.list_friends(toks[2]);
-            if (L.empty()) cout << "No friends found or user does not exist.\n";
-            else {
-                cout << "Friends of '" << toks[2] << "':\n";
-                for (auto &s : L) cout << "  " << s << "\n";
-            }
-        }
-
-        else if (toks.size() >= 4 && toks[0] == "SUGGEST" && toks[1] == "FRIENDS") {
-            int N = 0;
-            try { N = stoi(toks[3]); } catch (...) { N = 0; }
-            auto L = sn.suggest_friends(toks[2], N);
-            if (L.empty()) cout << "No suggestions available.\n";
-            else {
-                cout << "Suggested friends for '" << toks[2] << "':\n";
-                for (auto &s : L) cout << "  " << s << "\n";
-            }
-        }
-
-        else if (toks.size() >= 5 && toks[0] == "DEGREES" && toks[1] == "OF" && toks[2] == "SEPARATION") {
-            int d = sn.degrees_of_separation(toks[3], toks[4]);
-            cout << d << "\n";
-        }
-
-        else if (toks.size() >= 4 && toks[0] == "ADD" && toks[1] == "POST") {
-            string quoted;
-            for (size_t i = 3; i < toks.size(); ++i) {
-                if (toks[i].front() == '"') {
-                    quoted = toks[i];
-                    if (toks[i].back() != '"') {
-                        for (size_t j = i + 1; j < toks.size(); ++j) {
-                            quoted += " " + toks[j];
-                            if (toks[j].back() == '"') break;
-                        }
-                    }
-                    break;
+        } 
+        else if (cmd == "LIST") {
+            string what, user;
+            ss >> what >> user;
+            what = to_uppercase(what);
+            user = to_uppercase(user);
+            if (what == "FRIENDS") {
+                auto friends = sn.list_friends(user);
+                if (friends.empty()) cout << "No friends found or user not found." << endl;
+                else {
+                    cout << "Friends of '" << user << "':" << endl;
+                    for (auto &f : friends) cout << f << endl;
                 }
             }
-            string content = strip_quotes(quoted);
-            bool ok = sn.add_post(toks[2], content);
-            if (ok) cout << "Post added for '" << toks[2] << "'.\n";
-            else cout << "Failed to add post.\n";
-        }
-
-        else if (toks.size() >= 4 && toks[0] == "OUTPUT" && toks[1] == "POSTS") {
-            int N = 0;
-            try { N = stoi(toks[3]); } catch (...) { N = -1; }
-            auto posts = sn.output_posts(toks[2], N);
-            if (posts.empty()) cout << "No posts found.\n";
-            else {
-                cout << "Posts for '" << toks[2] << "':\n";
-                for (auto &p : posts) cout << "  " << p.content << "\n";
+        } 
+        else if (cmd == "SUGGEST") {
+            string what, user;
+            int N;
+            ss >> what >> user >> N;
+            what = to_uppercase(what);
+            user = to_uppercase(user);
+            if (what == "FRIENDS") {
+                auto sug = sn.suggest_friends(user, N);
+                if (sug.empty()) cout << "No suggestions available." << endl;
+                else {
+                    cout << "Suggested friends for '" << user << "':" << endl;
+                    for (auto &s : sug) cout << s << endl;
+                }
             }
-        }
-
-        else {
-            cout << "Unknown or malformed command.\n";
+        } 
+        else if (cmd == "DEGREES") {
+            string of, sep, u1, u2;
+            ss >> of >> sep >> u1 >> u2;
+            if (to_uppercase(of)=="OF" && to_uppercase(sep)=="SEPARATION") {
+                u1 = to_uppercase(u1);
+                u2 = to_uppercase(u2);
+                int d = sn.degrees_of_separation(u1, u2);
+                cout << d << endl;
+            }
+            else {
+                cout << "Unknown or malformed command." << endl;
+            }
+        } else if (cmd == "OUTPUT") {
+            string what, user;
+            int N;
+            ss >> what >> user >> N;
+            what = to_uppercase(what);
+            user = to_uppercase(user);
+            if (what == "POSTS") {
+                auto posts = sn.output_posts(user, N);
+                if (posts.empty()) cout << "No posts found or user not found." << endl;
+                else {
+                    cout << "Posts for '" << user << "':" << endl;
+                    for (auto &p : posts) cout << p.content << endl;
+                }
+            }
+        } else {
+            cout << "Unknown or malformed command." << endl;
         }
     }
+
+    cout << "Goodbye!" << endl;
     return 0;
 }

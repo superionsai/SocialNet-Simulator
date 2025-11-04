@@ -4,10 +4,11 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+using namespace std;
 
 struct User {
-    std::string name_lower;
-    std::string display_name;
+    string name_lower;
+    string display_name;
     AVLNode* posts;
     User(): posts(nullptr) {}
 };
@@ -16,19 +17,19 @@ class SocialNet {
 public:
     SocialNet();
     ~SocialNet();
-    bool add_user(const std::string &rawname);
-    bool add_friend(const std::string &a, const std::string &b);
-    std::vector<std::string> list_friends(const std::string &rawname) const;
-    std::vector<std::string> suggest_friends(const std::string &rawname, int N) const;
-    int degrees_of_separation(const std::string &a, const std::string &b) const;
-    bool add_post(const std::string &rawname, const std::string &content);
-    std::vector<Post> output_posts(const std::string &rawname, int N) const;
+    bool add_user(const string &rawname);
+    bool add_friend(const string &a, const string &b);
+    vector< string> list_friends(const string &rawname) const;
+    vector< string> suggest_friends(const string &rawname, int N) const;
+    int degrees_of_separation(const string &a, const string &b) const;
+    bool add_post(const string &rawname, const string &content);
+    vector<Post> output_posts(const string &rawname, int N) const;
 
 private:
-    std::string normalize(const std::string &s) const;
-    int get_id(const std::string &norm) const;
-    std::unordered_map<std::string,int> name2id;
-    std::vector<User> users;
-    std::vector<std::unordered_set<int>> adj;
+    string normalize(const string &s) const;
+    int get_id(const string &norm) const;
+    unordered_map<string,int> name2id;
+    vector<User> users;
+    vector< unordered_set<int>> adj;
     mutable long long global_ts;
 };
